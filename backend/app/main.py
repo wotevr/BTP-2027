@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.api import (
     routes_alerts,
@@ -27,7 +27,7 @@ from app.api import (
     routes_workers,
     routes_zones,
 )
-from app.core.config import settings
+from app.core.config import BACKEND_ROOT, settings
 from app.core.websocket_manager import manager
 from app.database.database import init_db
 from app.services.alert_service import alert_service
@@ -144,8 +144,9 @@ for module in (
     app.include_router(module.router, prefix=settings.API_PREFIX, tags=["API"])
 
 
-@app.get("/", tags=["Health"])
-async def root() -> dict:
+@app.get("/api/info", tags=["Health"])
+async def info() -> dict:
+    """Service information. Lives under /api so that / can serve the dashboard."""
     return {
         "name": settings.APP_NAME,
         "version": settings.VERSION,
@@ -212,3 +213,50 @@ async def websocket_live(websocket: WebSocket) -> None:
 @app.exception_handler(ValueError)
 async def value_error_handler(_request, exc: ValueError) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+# --------------------------------------------------------------------------- #
+# Production mode: serve the built dashboard from this same process.
+#
+# In development the Vite dev server runs on :5173 and proxies /api and /ws
+# here. That is two origins, which is fine on localhost but awkward to expose.
+# Once `npm run build` has produced frontend/dist, this mounts it at / so the
+# whole product is ONE origin on ONE port - which is what makes it work
+# straight through a tunnel, with the WebSocket on the same host as the page.
+#
+# Mounted last so it never shadows /api, /ws/live, /docs or /health.
+# --------------------------------------------------------------------------- #
+_DIST = BACKEND_ROOT.parent / "frontend" / "dist"
+
+if _DIST.is_dir():
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa(full_path: str):
+        """Serve a built asset, falling back to index.html for any other path."""
+        candidate = (_DIST / full_path).resolve()
+        # Keep the traversal inside dist: a crafted path must not escape it.
+        if full_path and _DIST.resolve() in candidate.parents and candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(_DIST / "index.html")
+
+    log.info("Serving the built dashboard from %s", _DIST)
+else:
+
+    @app.get("/", include_in_schema=False)
+    async def root_no_build() -> dict:
+        return {
+            "name": settings.APP_NAME,
+            "version": settings.VERSION,
+            "docs": "/docs",
+            "websocket": "/ws/live",
+            "dashboard": (
+                "not built - run `npm run build` in frontend/, or use the Vite "
+                "dev server on http://localhost:5173"
+            ),
+        }
+
+    log.info(
+        "No frontend build at %s - run `npm run build` in frontend/ to serve the "
+        "dashboard from this process, or use the Vite dev server on :5173.",
+        _DIST,
+    )
