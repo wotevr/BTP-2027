@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.venv/
+env/
+.pytest_cache/
+
+# Environment - never commit real secrets or machine-specific paths
+.env
+.env.local
+
+# Database (created at runtime by the app)
+*.db
+*.db-wal
+*.db-shm
+backend/data/*.db*
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

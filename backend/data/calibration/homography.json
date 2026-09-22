@@ -1,0 +1,63 @@
+{
+  "image_points": [
+    [
+      60.0,
+      450.0
+    ],
+    [
+      580.0,
+      450.0
+    ],
+    [
+      430.0,
+      150.0
+    ],
+    [
+      210.0,
+      150.0
+    ]
+  ],
+  "world_points": [
+    [
+      0.0,
+      0.0
+    ],
+    [
+      30.0,
+      0.0
+    ],
+    [
+      30.0,
+      20.0
+    ],
+    [
+      0.0,
+      20.0
+    ]
+  ],
+  "homography": [
+    [
+      17.333333333333336,
+      21.81818181818183,
+      59.999999999999986
+    ],
+    [
+      0.0,
+      -4.772727272727255,
+      449.9999999999999
+    ],
+    [
+      0.0,
+      0.06818181818181822,
+      1.0
+    ]
+  ],
+  "image_size": [
+    640,
+    480
+  ],
+  "created_at": "2026-09-22T08:20:38.283822+00:00",
+  "reprojection_error_px": 1.0903162726900487e-13,
+  "note": "DEMO CALIBRATION - a synthetic camera looking across a 30m x 20m site. Replace it by running scripts/calibrate_homography.py against your own camera before trusting any coordinate.",
+  "demo": true
+}

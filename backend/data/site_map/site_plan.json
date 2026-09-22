@@ -1,0 +1,96 @@
+{
+  "name": "Site B - Tower 3 Podium",
+  "width_m": 30.0,
+  "depth_m": 20.0,
+  "note": "Local site coordinates in metres. X = width, Y = depth. Not GPS.",
+  "features": [
+    {
+      "type": "building",
+      "label": "Tower 3 Core",
+      "polygon": [
+        [
+          9.0,
+          5.5
+        ],
+        [
+          19.0,
+          5.5
+        ],
+        [
+          19.0,
+          9.5
+        ],
+        [
+          9.0,
+          9.5
+        ]
+      ]
+    },
+    {
+      "type": "building",
+      "label": "Site Office",
+      "polygon": [
+        [
+          24.0,
+          15.0
+        ],
+        [
+          29.5,
+          15.0
+        ],
+        [
+          29.5,
+          19.5
+        ],
+        [
+          24.0,
+          19.5
+        ]
+      ]
+    },
+    {
+      "type": "access",
+      "label": "Gate",
+      "polygon": [
+        [
+          0.0,
+          8.5
+        ],
+        [
+          1.2,
+          8.5
+        ],
+        [
+          1.2,
+          11.5
+        ],
+        [
+          0.0,
+          11.5
+        ]
+      ]
+    },
+    {
+      "type": "path",
+      "label": "Haul Road",
+      "polygon": [
+        [
+          1.2,
+          9.4
+        ],
+        [
+          30.0,
+          9.4
+        ],
+        [
+          30.0,
+          10.6
+        ],
+        [
+          1.2,
+          10.6
+        ]
+      ]
+    }
+  ]
+}

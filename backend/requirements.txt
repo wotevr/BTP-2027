@@ -1,0 +1,26 @@
+# BTP-2027 spatial safety layer.
+#
+# This process does NOT run YOLO and does NOT import torch or ultralytics.
+# Those live in the upstream repository (Construction_Safety_BTP) and only the
+# optional bridge script needs them - see scripts/yolo_bridge.py.
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.4
+pydantic-settings==2.7.0
+
+sqlalchemy==2.0.36
+
+# Spatial core
+# Full build (not -headless): scripts/calibrate_homography.py opens a
+# window so you can click calibration points on a camera frame.
+opencv-python==4.10.0.84
+numpy==2.2.1
+shapely==2.0.6
+
+# Used by scripts/yolo_bridge.py to POST frames to the API
+httpx==0.28.1
+requests==2.32.3
+
+# Tests
+pytest==8.3.4

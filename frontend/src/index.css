@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+/*
+  Industrial control-room palette.
+
+  Graphite base, one accent, and a strict severity ramp. Severity colour is
+  reserved for severity: nothing decorative is allowed to use red or amber, so
+  that a red pixel on screen always means something.
+*/
+@theme {
+  --color-graphite-950: #0a0c0f;
+  --color-graphite-900: #101319;
+  --color-graphite-850: #151920;
+  --color-graphite-800: #1b2027;
+  --color-graphite-700: #262c36;
+  --color-graphite-600: #363e4a;
+  --color-graphite-500: #4a5464;
+  --color-graphite-400: #6b7686;
+  --color-graphite-300: #98a2b3;
+  --color-graphite-200: #c7cedb;
+
+  --color-accent: #38bdf8;
+  --color-accent-dim: #0e7490;
+
+  --color-sev-low: #38bdf8;
+  --color-sev-medium: #f59e0b;
+  --color-sev-high: #f97316;
+  --color-sev-critical: #ef4444;
+  --color-safe: #22c55e;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-graphite-950);
+  color: var(--color-graphite-200);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Compact, unobtrusive scrollbars - a dense dashboard should not be full of
+   chunky browser chrome. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-graphite-600) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--color-graphite-600);
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--color-graphite-500);
+}
+
+/* The live indicator. Slow and low-contrast on purpose: a control room runs
+   for hours and a fast blink becomes unbearable. */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* A newly arrived alert row flashes once, then settles. */
+@keyframes alert-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+    background-color: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    background-color: transparent;
+  }
+}
+.alert-in {
+  animation: alert-in 0.45s ease-out;
+}
+
+/*
+  Worker marker ring for a worker in a danger zone.
+
+  Scaled with a transform rather than by animating `r`. The site map draws in
+  user units that ARE METRES, so animating r from 8 to 20 would expand the ring
+  to twenty metres across the site. transform: scale() is relative to whatever
+  radius the marker chose, so it stays correct at every zoom level.
+*/
+@keyframes ring-expand {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+}
+.danger-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ring-expand 1.6s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot,
+  .alert-in,
+  .danger-ring {
+    animation: none;
+  }
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
