@@ -161,6 +161,21 @@ BTP-2027/
 
 ## 5. Quick start
 
+### Fastest path (Windows)
+
+```powershell
+.un.ps1 -Setup      # first time only: venv, deps, seed the database
+.un.ps1             # whole product on http://localhost:8000
+.un.ps1 -Public     # ...and a public https:// URL for a remote demo
+.un.ps1 -Dev        # hot-reload mode: Vite on :5173, API on :8000
+```
+
+In the default mode FastAPI serves the built dashboard itself, so the page,
+the REST API, the WebSocket and `/docs` are all on **one port** - which is what
+lets a single tunnel expose the whole product.
+
+### Manual
+
 Two terminals. Python 3.12+ and Node 20+.
 
 ### Terminal 1 — backend
