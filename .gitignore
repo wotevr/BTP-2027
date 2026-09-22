@@ -27,3 +27,6 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Tunnel binary downloaded on demand by run.ps1 -Public
+cloudflared.exe

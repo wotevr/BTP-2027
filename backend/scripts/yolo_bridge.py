@@ -50,8 +50,10 @@ Check it is working without a camera:
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import sys
 import time
+import types
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -72,15 +74,35 @@ def load_upstream_detector(upstream_backend: str, weights: str | None):
     .../Construction_Safety_BTP/Backend
     """
     root = Path(upstream_backend).expanduser().resolve()
-    if not (root / "app" / "models" / "yolo_detector.py").exists():
+    models = root / "app" / "models"
+    if not (models / "yolo_detector.py").exists():
         sys.exit(
             f"ERROR: {root} does not look like the upstream Backend directory.\n"
             "Expected to find app/models/yolo_detector.py under it."
         )
 
+    # Load yolo_detector.py directly instead of `from app.models...`.
+    #
+    # The upstream app/models/__init__.py instantiates the whole SafetyMonitor
+    # at import time, which pulls in MediaPipe and loads the model just to
+    # satisfy an import. Pose estimation and RULA/REBA are a separate concern
+    # from spatial tracking, so we bypass that package __init__ and execute
+    # yolo_detector.py on its own - unchanged, relative `from . import
+    # torch_patch` included - by mapping a synthetic package onto its folder.
     sys.path.insert(0, str(root))
     try:
-        from app.models.yolo_detector import YOLODetector  # type: ignore
+        pkg_name = "_upstream_models"
+        if pkg_name not in sys.modules:
+            pkg = types.ModuleType(pkg_name)
+            pkg.__path__ = [str(models)]
+            sys.modules[pkg_name] = pkg
+        spec = importlib.util.spec_from_file_location(
+            f"{pkg_name}.yolo_detector", models / "yolo_detector.py"
+        )
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[f"{pkg_name}.yolo_detector"] = module
+        spec.loader.exec_module(module)
+        YOLODetector = module.YOLODetector
     except ImportError as exc:
         sys.exit(
             f"ERROR: could not import the upstream detector: {exc}\n"
