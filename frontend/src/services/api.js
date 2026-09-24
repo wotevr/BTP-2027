@@ -74,6 +74,9 @@ export const api = {
   // zones
   zones: () => request("/zones"),
   sitePlan: () => request("/site-plan"),
+
+  // camera
+  cameraStatus: () => request("/camera/status"),
   createZone: (zone) =>
     request("/zones", { method: "POST", body: JSON.stringify(zone) }),
   updateZone: (id, patch) =>

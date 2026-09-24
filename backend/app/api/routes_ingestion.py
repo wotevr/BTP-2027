@@ -8,6 +8,8 @@ production path.
 """
 from __future__ import annotations
 
+import base64
+import binascii
 import logging
 
 from fastapi import APIRouter, Body, HTTPException, status
@@ -16,6 +18,7 @@ from app.core.config import settings
 from app.core.websocket_manager import manager
 from app.schemas.detection import DetectionFrame, IngestionResponse
 from app.services.demo_simulator import demo_simulator
+from app.services.frame_buffer import frame_buffer
 from app.services.fusion_engine import fusion_engine
 from app.services.homography import calibration
 from app.services.persistence import db_writer
@@ -83,6 +86,24 @@ async def ingest_raw(payload: dict = Body(...)) -> IngestionResponse:
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="body must contain a 'detections' list",
         )
+
+    # Optional annotated frame for the live camera view. Purely a display
+    # concern: if it is absent or malformed the spatial pipeline is unaffected
+    # and only the video panel goes dark.
+    jpeg_b64 = payload.get("frame_jpeg")
+    if isinstance(jpeg_b64, str) and jpeg_b64:
+        try:
+            frame_buffer.put(
+                camera_id=str(payload.get("camera_id", settings.CAMERA_ID)),
+                jpeg=base64.b64decode(jpeg_b64),
+                frame_id=int(payload.get("frame_id", 0) or 0),
+                size=(
+                    int(payload.get("frame_width", settings.FRAME_WIDTH) or settings.FRAME_WIDTH),
+                    int(payload.get("frame_height", settings.FRAME_HEIGHT) or settings.FRAME_HEIGHT),
+                ),
+            )
+        except (ValueError, TypeError, binascii.Error) as exc:
+            log.warning("discarding malformed frame_jpeg: %s", exc)
 
     names = payload.get("class_names")
     if isinstance(names, dict):

@@ -9,6 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import AlertFeed from "./AlertFeed";
+import CameraFeed from "./CameraFeed";
 import SiteMap from "./SiteMap";
 import WorkerDetail from "./WorkerDetail";
 import { api } from "../services/api";
@@ -30,6 +31,25 @@ export default function Dashboard({
   const [trail, setTrail] = useState(null);
   const [detail, setDetail] = useState(null);
   const [detailError, setDetailError] = useState(null);
+  const [cameraLive, setCameraLive] = useState(false);
+  const [cameraExpanded, setCameraExpanded] = useState(false);
+
+  // Poll whether a camera is actually pushing frames. Cheap, and it keeps the
+  // panel honest: it says "no feed" rather than showing a frozen last frame.
+  useEffect(() => {
+    let cancelled = false;
+    const check = () =>
+      api
+        .cameraStatus()
+        .then((s) => !cancelled && setCameraLive(Boolean(s?.any_live)))
+        .catch(() => !cancelled && setCameraLive(false));
+    check();
+    const id = setInterval(check, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, []);
 
   const workers = state?.workers ?? [];
   const alerts = state?.alerts ?? [];
@@ -95,6 +115,22 @@ export default function Dashboard({
             onSelectWorker={onSelectWorker}
             calibrated={calibrated}
           />
+
+          {/* Camera view, over the map. The map stays the primary element;
+              the feed is what lets you verify it. */}
+          <div
+            className={cx(
+              "absolute right-3 top-3 z-10",
+              cameraExpanded ? "inset-3" : "h-[214px] w-[290px]",
+            )}
+          >
+            <CameraFeed
+              cameraId={state?.camera_id}
+              live={cameraLive}
+              expanded={cameraExpanded}
+              onToggleExpand={() => setCameraExpanded((v) => !v)}
+            />
+          </div>
 
           {selectedWorkerId != null && (
             <WorkerDetail

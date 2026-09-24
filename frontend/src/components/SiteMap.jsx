@@ -359,7 +359,7 @@ export default function SiteMap({
       </svg>
 
       {/* controls */}
-      <div className="absolute right-3 top-3 flex flex-col gap-1">
+      <div className="absolute left-3 top-3 flex flex-col gap-1">
         <MapButton onClick={() => zoomCentre(1.3)} title="Zoom in">
           <Plus size={14} />
         </MapButton>

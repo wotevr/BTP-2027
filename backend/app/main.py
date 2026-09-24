@@ -21,6 +21,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 from app.api import (
     routes_alerts,
+    routes_camera,
     routes_analytics,
     routes_calibration,
     routes_ingestion,
@@ -140,6 +141,7 @@ for module in (
     routes_zones,
     routes_analytics,
     routes_calibration,
+    routes_camera,
 ):
     app.include_router(module.router, prefix=settings.API_PREFIX, tags=["API"])
 

@@ -50,6 +50,7 @@ Check it is working without a camera:
 from __future__ import annotations
 
 import argparse
+import base64
 import importlib.util
 import sys
 import time
@@ -170,7 +171,7 @@ class Poster:
         self.alerts = 0
         self._warned = False
 
-    def send(self, detections, class_names, frame_id, size) -> dict | None:
+    def send(self, detections, class_names, frame_id, size, jpeg_b64=None) -> dict | None:
         payload = {
             "camera_id": self.camera_id,
             "frame_id": frame_id,
@@ -181,6 +182,8 @@ class Poster:
         }
         if class_names:
             payload["class_names"] = {str(k): v for k, v in class_names.items()}
+        if jpeg_b64:
+            payload["frame_jpeg"] = jpeg_b64
         try:
             r = self.session.post(self.url, json=payload, timeout=self.timeout)
             r.raise_for_status()
@@ -202,6 +205,31 @@ class Poster:
 # --------------------------------------------------------------------------- #
 # Main loop
 # --------------------------------------------------------------------------- #
+def load_upstream_drawing(upstream_backend: str | None):
+    """His draw_detections, if his repo is available. Optional."""
+    if not upstream_backend:
+        return None
+    utils = Path(upstream_backend).expanduser().resolve() / "app" / "utils"
+    target = utils / "drawing_utils.py"
+    if not target.exists():
+        return None
+    try:
+        pkg = "_upstream_utils"
+        if pkg not in sys.modules:
+            m = types.ModuleType(pkg)
+            m.__path__ = [str(utils)]
+            sys.modules[pkg] = m
+        spec = importlib.util.spec_from_file_location(f"{pkg}.drawing_utils", target)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[f"{pkg}.drawing_utils"] = mod
+        spec.loader.exec_module(mod)
+        print("using the upstream draw_detections for the video overlay")
+        return mod.draw_detections
+    except Exception as exc:  # noqa: BLE001
+        print(f"  ! could not load upstream drawing_utils ({exc}); frames will be raw")
+        return None
+
+
 def run(args) -> int:
     import cv2
 
@@ -209,6 +237,8 @@ def run(args) -> int:
         detect, class_names = load_ultralytics_detector(args.weights)
     else:
         detect, class_names = load_upstream_detector(args.upstream, args.weights)
+
+    draw = load_upstream_drawing(args.upstream) if args.send_frames else None
 
     if class_names:
         print(f"Model classes ({len(class_names)}): {class_names}")
@@ -259,7 +289,25 @@ def run(args) -> int:
                 print(f"  ! detection failed on frame {frame_id}: {exc}")
                 continue
 
-            result = poster.send(detections, class_names, frame_id, size)
+            # Annotated frame for the dashboard video panel. Drawn with the
+            # UPSTREAM drawing code where available, so what the operator sees
+            # is the detector's own rendering, not a second interpretation.
+            jpeg_b64 = None
+            if args.send_frames:
+                try:
+                    canvas = frame.copy()
+                    if draw is not None and class_names:
+                        canvas = draw(canvas, detections, class_names)
+                    ok_enc, buf = cv2.imencode(
+                        ".jpg", canvas, [cv2.IMWRITE_JPEG_QUALITY, args.jpeg_quality]
+                    )
+                    if ok_enc:
+                        jpeg_b64 = base64.b64encode(buf).decode("ascii")
+                except Exception as exc:  # noqa: BLE001 - video is not safety critical
+                    if frame_id % 100 == 1:
+                        print(f"  ! frame encode failed: {exc}")
+
+            result = poster.send(detections, class_names, frame_id, size, jpeg_b64)
             frames_since_report += 1
 
             if result and result.get("alerts_generated"):
@@ -341,6 +389,10 @@ def main() -> int:
     p.add_argument("--height", type=int, default=480, help="inference height")
     p.add_argument("--fps", type=float, default=10.0, help="cap the send rate (0 = uncapped)")
     p.add_argument("--loop", action="store_true", help="restart a video file when it ends")
+    p.add_argument("--send-frames", action="store_true",
+                   help="also push annotated JPEG frames for the dashboard video panel")
+    p.add_argument("--jpeg-quality", type=int, default=65,
+                   help="JPEG quality for the video panel (default 65)")
     p.add_argument("--self-test", action="store_true", help="post one synthetic frame and exit")
     args = p.parse_args()
 
