@@ -43,6 +43,9 @@ assigned by BoT-SORT is consumed directly and becomes the worker id.
 Full detail, including exactly what the upstream pipeline emits and how to wire
 it up: **[`docs/INTEGRATION.md`](docs/INTEGRATION.md)**.
 
+A measured technical review of that system, and the evidence motivating this
+project: **[`docs/EXISTING_SYSTEM.md`](docs/EXISTING_SYSTEM.md)**.
+
 ---
 
 ## 3. Architecture
@@ -164,10 +167,14 @@ BTP-2027/
 ### Fastest path (Windows)
 
 ```powershell
-.un.ps1 -Setup      # first time only: venv, deps, seed the database
-.un.ps1             # whole product on http://localhost:8000
-.un.ps1 -Public     # ...and a public https:// URL for a remote demo
-.un.ps1 -Dev        # hot-reload mode: Vite on :5173, API on :8000
+.
+un.ps1 -Setup      # first time only: venv, deps, seed the database
+.
+un.ps1             # whole product on http://localhost:8000
+.
+un.ps1 -Public     # ...and a public https:// URL for a remote demo
+.
+un.ps1 -Dev        # hot-reload mode: Vite on :5173, API on :8000
 ```
 
 In the default mode FastAPI serves the built dashboard itself, so the page,
