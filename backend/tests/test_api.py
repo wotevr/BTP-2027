@@ -66,7 +66,21 @@ def detection_payload(track_id=17, bbox=None, ppe=None, **kw):
 # --------------------------------------------------------------------------- #
 def test_root_and_health(client):
     assert client.get("/health").json()["status"] == "ok"
-    assert client.get("/").json()["docs"] == "/docs"
+    # Service info moved to /api/info so that / can serve the built dashboard.
+    assert client.get("/api/info").json()["docs"] == "/docs"
+
+
+def test_root_serves_the_dashboard_when_built(client):
+    """
+    / is the dashboard once frontend/dist exists, and falls back to service
+    info when it does not. Both are valid; a 404 never is.
+    """
+    r = client.get("/")
+    assert r.status_code == 200
+    if "text/html" in r.headers.get("content-type", ""):
+        assert "<div id=\"root\"" in r.text
+    else:
+        assert r.json()["docs"] == "/docs"
 
 
 def test_openapi_schema_is_served(client):
